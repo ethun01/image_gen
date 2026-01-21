@@ -8,6 +8,8 @@
         :root {
             --primary: #6366f1;
             --primary-hover: #4f46e5;
+            --secondary: #10b981; /* Green for download */
+            --secondary-hover: #059669;
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --glass-bg: rgba(255, 255, 255, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.2);
@@ -90,27 +92,40 @@
             background: white;
         }
 
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
         button {
             width: 100%;
             padding: 14px;
-            background-color: var(--primary);
-            color: white;
             border: none;
             border-radius: 10px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
-            margin-top: 1rem;
         }
 
-        button:hover {
+        .btn-generate {
+            background-color: var(--primary);
+            color: white;
+        }
+        .btn-generate:hover {
             background-color: var(--primary-hover);
             transform: translateY(-1px);
         }
 
-        button:active {
-            transform: translateY(0);
+        .btn-download {
+            background-color: var(--secondary);
+            color: white;
+            display: none; /* Hidden by default */
+        }
+        .btn-download:hover {
+            background-color: var(--secondary-hover);
+            transform: translateY(-1px);
         }
 
         #result-container {
@@ -157,6 +172,7 @@
         @media (max-width: 480px) {
             .controls-grid { grid-template-columns: 1fr; }
             .glass-card { padding: 1.5rem; }
+            .btn-group { flex-direction: column; }
         }
     </style>
 </head>
@@ -194,47 +210,57 @@
             </div>
         </div>
 
-        <button onclick="generateImage()">✨ Generate Masterpiece</button>
+        <div class="btn-group">
+            <button class="btn-generate" onclick="generateImage()">✨ Generate</button>
+            <button class="btn-download" id="downloadBtn" onclick="downloadImage()">⬇ Download</button>
+        </div>
 
         <div id="result-container">
             <div class="loading-spinner" id="spinner"></div>
-            <img id="generatedImage" alt="Generated Art" />
+            <img id="generatedImage" alt="Generated Art" crossorigin="anonymous" />
         </div>
     </div>
 
     <script>
+        let currentImageUrl = "";
+
         function generateImage() {
             const prompt = document.getElementById('promptInput').value;
             const model = document.getElementById('modelSelect').value;
             const ratio = document.getElementById('ratioSelect').value;
             const img = document.getElementById('generatedImage');
             const spinner = document.getElementById('spinner');
+            const downloadBtn = document.getElementById('downloadBtn');
 
             if (!prompt) {
                 alert("Please describe your image first!");
                 return;
             }
 
-            // Calculate dimensions based on aspect ratio
+            // Calculate dimensions
             let width = 1024, height = 1024;
             if (ratio === "16:9") { width = 1280; height = 720; }
             else if (ratio === "9:16") { width = 720; height = 1280; }
             else if (ratio === "4:3") { width = 1024; height = 768; }
             else if (ratio === "3:4") { width = 768; height = 1024; }
 
-            // UI Loading State
+            // Reset UI
             img.style.display = 'none';
             img.classList.remove('loaded');
             spinner.style.display = 'block';
+            downloadBtn.style.display = 'none'; // Hide download until ready
 
             // Construct API URL
             const seed = Math.floor(Math.random() * 100000);
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=${width}&height=${height}&seed=${seed}&nologo=true`;
+            
+            currentImageUrl = imageUrl;
+            img.src = imageUrl;
 
             img.onload = function() {
                 spinner.style.display = 'none';
                 img.style.display = 'block';
-                // Small delay to allow display:block to apply before opacity transition
+                downloadBtn.style.display = 'block'; // Show download button
                 setTimeout(() => img.classList.add('loaded'), 10);
             };
 
@@ -242,8 +268,42 @@
                 spinner.style.display = 'none';
                 alert("Error generating image. Please try again.");
             };
+        }
 
-            img.src = imageUrl;
+        async function downloadImage() {
+            if (!currentImageUrl) return;
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            const originalText = downloadBtn.innerText;
+            downloadBtn.innerText = "Downloading...";
+
+            try {
+                // Fetch image as blob to force download
+                const response = await fetch(currentImageUrl);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+
+                // Create hidden anchor tag
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                
+                // Create filename with timestamp
+                const date = new Date();
+                const timestamp = date.getTime();
+                link.download = `dreamcanvas_${timestamp}.jpg`;
+                
+                document.body.appendChild(link);
+                link.click();
+                
+                // Cleanup
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Download failed:', error);
+                alert("Could not download automatically. Please right-click the image and save as.");
+            } finally {
+                downloadBtn.innerText = originalText;
+            }
         }
     </script>
 
