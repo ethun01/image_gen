@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations Image Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 { margin-bottom: 1.5rem; color: #4a4a4a; }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            width: 100%;
+        }
+        button:hover { background-color: #0056b3; }
+        #result-container {
+            margin-top: 20px;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        img { max-width: 100%; display: none; }
+        .loading { color: #888; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>AI Image Generator</h1>
+        <p>Powered by Pollinations.ai</p>
+        
+        <input type="text" id="promptInput" placeholder="Describe an image (e.g., 'cyberpunk city')" />
+        <button onclick="generateImage()">Generate Image</button>
+
+        <div id="result-container">
+            <span class="loading" id="loadingText">Generating...</span>
+            <img id="generatedImage" alt="Generated Art" />
+        </div>
+    </div>
+
+    <script>
+        function generateImage() {
+            const prompt = document.getElementById('promptInput').value;
+            const img = document.getElementById('generatedImage');
+            const loading = document.getElementById('loadingText');
+            const container = document.getElementById('result-container');
+
+            if (!prompt) {
+                alert("Please enter a prompt!");
+                return;
+            }
+
+            // Show loading state
+            img.style.display = 'none';
+            loading.style.display = 'block';
+
+            // Pollinations API URL
+            // Random seed added to ensure fresh image on same prompt
+            const randomSeed = Math.floor(Math.random() * 10000);
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?seed=${randomSeed}&width=512&height=512&nologo=true`;
+
+            img.onload = function() {
+                loading.style.display = 'none';
+                img.style.display = 'block';
+            };
+
+            img.onerror = function() {
+                loading.innerText = "Error generating image. Try again.";
+            };
+
+            img.src = imageUrl;
+        }
+    </script>
+
+</body>
+</html>
