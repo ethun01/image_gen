@@ -8,7 +8,7 @@
         :root {
             --primary: #6366f1;
             --primary-hover: #4f46e5;
-            --secondary: #10b981; /* Green for download */
+            --secondary: #10b981;
             --secondary-hover: #059669;
             --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --glass-bg: rgba(255, 255, 255, 0.95);
@@ -121,7 +121,7 @@
         .btn-download {
             background-color: var(--secondary);
             color: white;
-            display: none; /* Hidden by default */
+            display: none;
         }
         .btn-download:hover {
             background-color: var(--secondary-hover);
@@ -168,7 +168,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Mobile Responsive */
         @media (max-width: 480px) {
             .controls-grid { grid-template-columns: 1fr; }
             .glass-card { padding: 1.5rem; }
@@ -193,8 +192,9 @@
                 <select id="modelSelect">
                     <option value="flux">Flux (Best Quality)</option>
                     <option value="turbo">Turbo (Fast)</option>
-                    <option value="zimage">Z-Image (Realistic)</option>
-                    <option value="seedream">Seedream (Artistic)</option>
+                    <option value="flux-realism">Flux Realism</option>
+                    <option value="flux-anime">Flux Anime</option>
+                    <option value="flux-3d">Flux 3D</option>
                 </select>
             </div>
             
@@ -237,21 +237,21 @@
                 return;
             }
 
-            // Calculate dimensions
             let width = 1024, height = 1024;
             if (ratio === "16:9") { width = 1280; height = 720; }
             else if (ratio === "9:16") { width = 720; height = 1280; }
             else if (ratio === "4:3") { width = 1024; height = 768; }
             else if (ratio === "3:4") { width = 768; height = 1024; }
 
-            // Reset UI
             img.style.display = 'none';
             img.classList.remove('loaded');
             spinner.style.display = 'block';
-            downloadBtn.style.display = 'none'; // Hide download until ready
+            downloadBtn.style.display = 'none';
 
-            // Construct API URL
+            // Random seed to ensure new images
             const seed = Math.floor(Math.random() * 100000);
+            
+            // Using the standard public endpoint with supported models
             const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?model=${model}&width=${width}&height=${height}&seed=${seed}&nologo=true`;
             
             currentImageUrl = imageUrl;
@@ -260,52 +260,40 @@
             img.onload = function() {
                 spinner.style.display = 'none';
                 img.style.display = 'block';
-                downloadBtn.style.display = 'block'; // Show download button
+                downloadBtn.style.display = 'block';
                 setTimeout(() => img.classList.add('loaded'), 10);
             };
 
             img.onerror = function() {
                 spinner.style.display = 'none';
-                alert("Error generating image. Please try again.");
+                alert("Error generating image. Try switching models or checking your connection.");
             };
         }
 
         async function downloadImage() {
             if (!currentImageUrl) return;
-
             const downloadBtn = document.getElementById('downloadBtn');
             const originalText = downloadBtn.innerText;
             downloadBtn.innerText = "Downloading...";
-
             try {
-                // Fetch image as blob to force download
                 const response = await fetch(currentImageUrl);
                 const blob = await response.blob();
                 const blobUrl = window.URL.createObjectURL(blob);
-
-                // Create hidden anchor tag
                 const link = document.createElement('a');
                 link.href = blobUrl;
-                
-                // Create filename with timestamp
                 const date = new Date();
-                const timestamp = date.getTime();
-                link.download = `dreamcanvas_${timestamp}.jpg`;
-                
+                link.download = `dreamcanvas_${date.getTime()}.jpg`;
                 document.body.appendChild(link);
                 link.click();
-                
-                // Cleanup
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(blobUrl);
             } catch (error) {
                 console.error('Download failed:', error);
-                alert("Could not download automatically. Please right-click the image and save as.");
+                alert("Could not download automatically. Please right-click and save.");
             } finally {
                 downloadBtn.innerText = originalText;
             }
         }
     </script>
-
 </body>
 </html>
